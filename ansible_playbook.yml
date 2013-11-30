@@ -1,0 +1,22 @@
+---
+- hosts: all
+  tasks:
+    - name: ensure packages for rails dev are installed
+      apt: name={{item}} update_cache=yes
+      with_items: 
+        - apache2
+        - curl
+        - git
+        - libmysqlclient-dev
+        - mysql-server
+        - nodejs
+      sudo: yes
+    - name: install and configure rvm
+      script: rvm.sh
+    - name: install ruby 2
+      shell: PATH=$PATH:$HOME/.rvm/bin rvm install 2.0.0
+        creates=/home/vagrant/.rvm/rubies/ruby-2.0.0-p247/
+    - name: set ruby 2 to default
+      shell: PATH=$PATH:$HOME/.rvm/bin rvm use 2.0.0 --default
+    - name: install rails
+      gem: name=rails state=latest executable=/home/vagrant/.rvm/bin/gem
