@@ -17,6 +17,6 @@
       shell: PATH=$PATH:$HOME/.rvm/bin rvm install 2.0.0
         creates=/home/vagrant/.rvm/rubies/ruby-2.0.0-p247/
     - name: set ruby 2 to default
-      shell: PATH=$PATH:$HOME/.rvm/bin rvm use 2.0.0 --default
+      shell: PATH=$PATH:$HOME/.rvm/bin rvm alias create default 2.0.0
     - name: install rails
       gem: name=rails state=latest executable=/home/vagrant/.rvm/bin/gem
