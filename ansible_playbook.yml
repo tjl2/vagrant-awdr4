@@ -1,9 +1,16 @@
 ---
 - hosts: all
+
+  vars:
+    - rbenv_root: ~/.rbenv
+    - ruby_version: 2.1.0
+    - home_dir: "{{ansible_env.HOME}}"
+
+
   tasks:
-    - name: ensure packages for rails dev are installed
+    - name: install rails dependencies
       apt: name={{item}} update_cache=yes
-      with_items: 
+      with_items:
         - apache2
         - curl
         - git
@@ -11,12 +18,62 @@
         - mysql-server
         - nodejs
       sudo: yes
-    - name: install and configure rvm
-      script: rvm.sh
-    - name: install ruby 2
-      shell: PATH=$PATH:$HOME/.rvm/bin rvm install 2.0.0
-        creates=/home/vagrant/.rvm/rubies/ruby-2.0.0-p247/
-    - name: set ruby 2 to default
-      shell: PATH=$PATH:$HOME/.rvm/bin rvm alias create default 2.0.0
-    - name: install rails
-      gem: name=rails state=latest executable=/home/vagrant/.rvm/bin/gem
+
+    - name: install rbenv dependencies
+      apt: name={{item}} state=latest install_recommends=no
+      with_items:
+        - build-essential
+        - git
+        - libcurl4-openssl-dev
+        - libreadline-dev
+        - libssl-dev
+        - libxml2-dev
+        - libxslt1-dev
+        - zlib1g-dev
+      sudo: yes
+
+    - name: git clone rbenv
+      git: repo=https://github.com/sstephenson/rbenv.git dest={{rbenv_root}}
+
+    - name: git clone ruby-build plugin
+      git: repo=git://github.com/sstephenson/ruby-build.git dest={{rbenv_root}}/plugins/ruby-build update=no
+
+    - name: add rbenv init to ~/.bashrc
+      lineinfile: >
+        dest={{home_dir}}/.bashrc
+        line='eval "$(rbenv init -)"'
+        insertbefore=BOF
+        regexp=eval.*rbenv
+        create=yes
+        state=present
+
+    - name: update PATH in ~/.bashrc for rbenv
+      lineinfile: >
+        dest={{home_dir}}/.bashrc
+        line=export\ PATH="$HOME/.rbenv/bin:$PATH"
+        insertbefore=BOF
+        regexp=PATH.*rbenv
+
+    - name: check if ruby {{ruby_version}} is installed
+      shell: rbenv versions | grep {{ruby_version}}
+      register: ruby_installed
+      ignore_errors: yes
+      changed_when: false
+
+    - name: install ruby {{ruby_version}} unless it is already installed
+      command: rbenv install {{ruby_version}}
+      when: ruby_installed | failed
+
+    - name: check current global ruby
+      command: rbenv global
+      register: ruby_global
+      changed_when: false
+
+    - name: make ruby {{ruby_version}} global
+      command: rbenv global {{ruby_version}}
+      when: "ruby_version != ruby_global.stdout"
+
+    - name: install required gems
+      gem: name={{item}} state=present user_install=no
+      with_items:
+        - bundler
