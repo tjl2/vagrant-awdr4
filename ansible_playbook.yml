@@ -8,17 +8,6 @@
 
 
   tasks:
-    - name: install rails dependencies
-      apt: name={{item}} update_cache=yes
-      with_items:
-        - apache2
-        - curl
-        - git
-        - libmysqlclient-dev
-        - mysql-server
-        - nodejs
-      sudo: yes
-
     - name: install rbenv dependencies
       apt: name={{item}} state=latest install_recommends=no
       with_items:
@@ -30,6 +19,18 @@
         - libxml2-dev
         - libxslt1-dev
         - zlib1g-dev
+      sudo: yes
+
+    - name: install rails dependencies
+      apt: name={{item}} update_cache=yes
+      with_items:
+        - apache2
+        - curl
+        - git
+        - libmysqlclient-dev
+        - mysql-server
+        - nodejs
+        - libsqlite3-dev
       sudo: yes
 
     - name: git clone rbenv
