@@ -78,3 +78,8 @@
       with_items:
         - bundler
         - rails
+    - name: create directory for rails projects
+      file: state=directory path=/vagrant/code owner=vagrant group=vagrant
+
+    - name: symlink rails projects directory to ~
+      file: state=link src=/vagrant/code dest=~/code
